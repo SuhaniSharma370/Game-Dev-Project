@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Catch the Fruit</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+</head>
+<body>
+<script>
+let basketX, basketY, basketWidth, basketHeight;
+let fruitX, fruitY, fruitSize, fruitSpeed;
+let score = 0;
+let gameOver = false;
+
+function setup() {
+  createCanvas(400, 400);
+  basketWidth = 60;
+  basketHeight = 20;
+  basketX = width / 2 - basketWidth / 2;
+  basketY = height - basketHeight - 10;
+  fruitSize = 20;
+  resetFruit();
+}
+
+function draw() {
+  background(220);
+  
+  if (!gameOver) {
+    // Draw basket
+    fill(100, 100, 200);
+    rect(basketX, basketY, basketWidth, basketHeight);
+    
+    // Update basket position based on mouse
+    basketX = constrain(mouseX - basketWidth / 2, 0, width - basketWidth);
+    
+    // Draw fruit
+    fill(255, 0, 0);
+    ellipse(fruitX, fruitY, fruitSize);
+    
+    // Move fruit
+    fruitY += fruitSpeed;
+    
+    // Check if fruit is caught
+    if (fruitY + fruitSize / 2 > basketY && 
+        fruitX > basketX && 
+        fruitX < basketX + basketWidth) {
+      score += 1;
+      resetFruit();
+    }
+    
+    // Check if fruit hits the bottom
+    if (fruitY > height) {
+      gameOver = true;
+    }
+    
+    // Display score
+    fill(0);
+    textSize(20);
+    text("Score: " + score, 10, 30);
+  } else {
+    // Game over screen
+    fill(0);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text("Game Over\nScore: " + score, width / 2, height / 2);
+  }
+}
+
+function resetFruit() {
+  fruitX = random(fruitSize, width - fruitSize);
+  fruitY = 0;
+  fruitSpeed = random(2, 5);
+}
+
+function mousePressed() {
+  if (gameOver) {
+    score = 0;
+    gameOver = false;
+    resetFruit();
+  }
+}
+</script>
+</body>
+</html>
