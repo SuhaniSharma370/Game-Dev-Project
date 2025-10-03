@@ -1,83 +1,456 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Catch the Fruit</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallax Game Development Portfolio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a0933 0%, #2e1a47 100%);
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+        .neon-text {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #00ffff;
+            animation: flicker 1.5s infinite alternate;
+        }
+        .game-button {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: 3px solid #fff;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px #000;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .game-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #ff00ff, 0 0 30px #00ffff;
+        }
+        #gameContainer {
+            display: none;
+            position: relative;
+            z-index: 5;
+        }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #00ffff; }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+        canvas {
+            margin: 20px auto;
+            display: block;
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-<script>
-let basketX, basketY, basketWidth, basketHeight;
-let fruitX, fruitY, fruitSize, fruitSpeed;
-let score = 0;
-let gameOver = false;
+    <div id="menu">
+        <h1 class="neon-text text-4xl md:text-5xl mb-10">Parallax Game Development Portfolio</h1>
+        <button onclick="startGame('catch')" class="game-button">Catch the Fruit</button>
+        <button onclick="startGame('snake')" class="game-button">Snake</button>
+        <button onclick="startGame('pong')" class="game-button">Pong</button>
+        <button onclick="startGame('flappy')" class="game-button">Flappy Bird</button>
+    </div>
+    <div id="gameContainer"></div>
 
-function setup() {
-  createCanvas(400, 400);
-  basketWidth = 60;
-  basketHeight = 20;
-  basketX = width / 2 - basketWidth / 2;
-  basketY = height - basketHeight - 10;
-  fruitSize = 20;
-  resetFruit();
-}
+    <script>
+        function startGame(gameType) {
+            document.getElementById('menu').style.display = 'none';
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = '';
+            container.style.display = 'block';
 
-function draw() {
-  background(220);
-  
-  if (!gameOver) {
-    // Draw basket
-    fill(100, 100, 200);
-    rect(basketX, basketY, basketWidth, basketHeight);
-    
-    // Update basket position based on mouse
-    basketX = constrain(mouseX - basketWidth / 2, 0, width - basketWidth);
-    
-    // Draw fruit
-    fill(255, 0, 0);
-    ellipse(fruitX, fruitY, fruitSize);
-    
-    // Move fruit
-    fruitY += fruitSpeed;
-    
-    // Check if fruit is caught
-    if (fruitY + fruitSize / 2 > basketY && 
-        fruitX > basketX && 
-        fruitX < basketX + basketWidth) {
-      score += 1;
-      resetFruit();
-    }
-    
-    // Check if fruit hits the bottom
-    if (fruitY > height) {
-      gameOver = true;
-    }
-    
-    // Display score
-    fill(0);
-    textSize(20);
-    text("Score: " + score, 10, 30);
-  } else {
-    // Game over screen
-    fill(0);
-    textSize(32);
-    textAlign(CENTER, CENTER);
-    text("Game Over\nScore: " + score, width / 2, height / 2);
-  }
-}
+            if (gameType === 'catch') {
+                new p5(catchTheFruitSketch, container);
+            } else if (gameType === 'snake') {
+                new p5(snakeSketch, container);
+            } else if (gameType === 'pong') {
+                new p5(pongSketch, container);
+            } else if (gameType === 'flappy') {
+                new p5(flappyBirdSketch, container);
+            }
+        }
 
-function resetFruit() {
-  fruitX = random(fruitSize, width - fruitSize);
-  fruitY = 0;
-  fruitSpeed = random(2, 5);
-}
+        function showMenu() {
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+        }
 
-function mousePressed() {
-  if (gameOver) {
-    score = 0;
-    gameOver = false;
-    resetFruit();
-  }
-}
-</script>
+        // Catch the Fruit Sketch (Unchanged)
+        const catchTheFruitSketch = function(p) {
+            let basketX, basketY, basketWidth = 80, basketHeight = 30;
+            let fruits = [];
+            let score = 0;
+            let lives = 3;
+            let gameOver = false;
+            let spawnRate = 60;
+            let frameCount = 0;
+
+            p.setup = function() {
+                p.createCanvas(400, 500);
+                basketX = p.width / 2 - basketWidth / 2;
+                basketY = p.height - basketHeight - 20;
+                spawnFruit();
+            };
+
+            p.draw = function() {
+                p.background(135, 206, 235);
+
+                if (!gameOver) {
+                    p.fill(139, 69, 19);
+                    p.rect(basketX, basketY, basketWidth, basketHeight, 10);
+
+                    basketX = p.constrain(p.mouseX - basketWidth / 2, 0, p.width - basketWidth);
+
+                    for (let i = fruits.length - 1; i >= 0; i--) {
+                        let fruit = fruits[i];
+                        p.fill(fruit.color);
+                        p.ellipse(fruit.x, fruit.y, fruit.size);
+
+                        fruit.y += fruit.speed;
+
+                        if (fruit.y + fruit.size / 2 > basketY && 
+                            fruit.x > basketX && fruit.x < basketX + basketWidth) {
+                            score += fruit.points;
+                            fruits.splice(i, 1);
+                        } else if (fruit.y > p.height) {
+                            lives--;
+                            fruits.splice(i, 1);
+                            if (lives <= 0) {
+                                gameOver = true;
+                            }
+                        }
+                    }
+
+                    frameCount++;
+                    if (frameCount >= spawnRate) {
+                        spawnFruit();
+                        frameCount = 0;
+                        if (spawnRate > 20) spawnRate -= 1;
+                    }
+
+                    p.fill(0);
+                    p.textSize(20);
+                    p.text(`Score: ${score}`, 10, 30);
+                    p.text(`Lives: ${lives}`, p.width - 80, 30);
+                } else {
+                    p.fill(0);
+                    p.textSize(32);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(`Game Over\nScore: ${score}`, p.width / 2, p.height / 2);
+                    p.textSize(20);
+                    p.text('Click to return to menu', p.width / 2, p.height / 2 + 50);
+                }
+            };
+
+            function spawnFruit() {
+                const types = [
+                    {color: [255, 0, 0], size: 20, speed: p.random(3, 6), points: 1},
+                    {color: [255, 165, 0], size: 25, speed: p.random(2, 5), points: 2},
+                    {color: [0, 255, 0], size: 15, speed: p.random(4, 7), points: 3}
+                ];
+                const type = types[Math.floor(p.random(types.length))];
+                fruits.push({
+                    x: p.random(type.size, p.width - type.size),
+                    y: 0,
+                    ...type
+                });
+            }
+
+            p.mousePressed = function() {
+                if (gameOver) {
+                    showMenu();
+                }
+            };
+        };
+
+        // Snake Sketch (Unchanged)
+        const snakeSketch = function(p) {
+            let snake = [];
+            let food;
+            let dir;
+            let scl = 20;
+            let score = 0;
+            let gameOver = false;
+
+            p.setup = function() {
+                p.createCanvas(400, 400);
+                p.frameRate(10);
+                snake[0] = p.createVector(p.floor(p.width / 2 / scl) * scl, p.floor(p.height / 2 / scl) * scl);
+                dir = p.createVector(0, 0);
+                placeFood();
+            };
+
+            p.draw = function() {
+                p.background(51);
+
+                if (!gameOver) {
+                    let head = snake[0].copy();
+                    head.add(dir);
+
+                    if (head.x < 0 || head.x >= p.width || head.y < 0 || head.y >= p.height) {
+                        gameOver = true;
+                    }
+
+                    for (let i = 1; i < snake.length; i++) {
+                        if (head.x === snake[i].x && head.y === snake[i].y) {
+                            gameOver = true;
+                        }
+                    }
+
+                    snake.unshift(head);
+
+                    if (head.x === food.x && head.y === food.y) {
+                        score++;
+                        placeFood();
+                    } else {
+                        snake.pop();
+                    }
+
+                    p.fill(0, 255, 0);
+                    for (let pos of snake) {
+                        p.rect(pos.x, pos.y, scl, scl);
+                    }
+
+                    p.fill(255, 0, 0);
+                    p.rect(food.x, food.y, scl, scl);
+
+                    p.fill(255);
+                    p.textSize(20);
+                    p.text(`Score: ${score}`, 10, 30);
+                } else {
+                    p.fill(255);
+                    p.textSize(32);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(`Game Over\nScore: ${score}`, p.width / 2, p.height / 2);
+                    p.textSize(20);
+                    p.text('Click to return to menu', p.width / 2, p.height / 2 + 50);
+                }
+            };
+
+            p.keyPressed = function() {
+                if (p.keyCode === p.UP_ARROW && dir.y === 0) dir = p.createVector(0, -scl);
+                else if (p.keyCode === p.DOWN_ARROW && dir.y === 0) dir = p.createVector(0, scl);
+                else if (p.keyCode === p.LEFT_ARROW && dir.x === 0) dir = p.createVector(-scl, 0);
+                else if (p.keyCode === p.RIGHT_ARROW && dir.x === 0) dir = p.createVector(scl, 0);
+            };
+
+            function placeFood() {
+                food = p.createVector(p.floor(p.random(p.width / scl)) * scl, p.floor(p.random(p.height / scl)) * scl);
+            }
+
+            p.mousePressed = function() {
+                if (gameOver) {
+                    showMenu();
+                }
+            };
+        };
+
+        // Pong Sketch
+        const pongSketch = function(p) {
+            let paddleX, paddleY, paddleWidth = 80, paddleHeight = 10;
+            let ballX, ballY, ballSize = 10, ballSpeedX, ballSpeedY;
+            let score = 0;
+            let gameOver = false;
+
+            p.setup = function() {
+                p.createCanvas(400, 400);
+                paddleX = p.width / 2 - paddleWidth / 2;
+                paddleY = p.height - paddleHeight - 20;
+                resetBall();
+            };
+
+            p.draw = function() {
+                p.background(0);
+
+                if (!gameOver) {
+                    // Draw paddle
+                    p.fill(255);
+                    p.rect(paddleX, paddleY, paddleWidth, paddleHeight);
+
+                    // Update paddle
+                    paddleX = p.constrain(p.mouseX - paddleWidth / 2, 0, p.width - paddleWidth);
+
+                    // Draw ball
+                    p.fill(255, 0, 0);
+                    p.ellipse(ballX, ballY, ballSize);
+
+                    // Update ball
+                    ballX += ballSpeedX;
+                    ballY += ballSpeedY;
+
+                    // Ball collisions with walls
+                    if (ballX < ballSize / 2 || ballX > p.width - ballSize / 2) {
+                        ballSpeedX *= -1;
+                    }
+                    if (ballY < ballSize / 2) {
+                        ballSpeedY *= -1;
+                    }
+
+                    // Ball collision with paddle
+                    if (ballY + ballSize / 2 > paddleY && 
+                        ballX > paddleX && ballX < paddleX + paddleWidth) {
+                        ballSpeedY *= -1;
+                        score++;
+                        ballSpeedX *= 1.1; // Increase difficulty
+                        ballSpeedY *= 1.1;
+                    }
+
+                    // Game over
+                    if (ballY > p.height) {
+                        gameOver = true;
+                    }
+
+                    // Display score
+                    p.fill(255);
+                    p.textSize(20);
+                    p.text(`Score: ${score}`, 10, 30);
+                } else {
+                    p.fill(255);
+                    p.textSize(32);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(`Game Over\nScore: ${score}`, p.width / 2, p.height / 2);
+                    p.textSize(20);
+                    p.text('Click to return to menu', p.width / 2, p.height / 2 + 50);
+                }
+            };
+
+            function resetBall() {
+                ballX = p.width / 2;
+                ballY = p.height / 4;
+                ballSpeedX = p.random(-3, 3);
+                ballSpeedY = 3;
+            }
+
+            p.mousePressed = function() {
+                if (gameOver) {
+                    showMenu();
+                }
+            };
+        };
+
+        // Flappy Bird Sketch
+        const flappyBirdSketch = function(p) {
+            let birdX = 100, birdY, birdSize = 20, birdVelocity = 0, gravity = 0.5, jump = -8;
+            let pipes = [];
+            let score = 0;
+            let gameOver = false;
+            let pipeGap = 100;
+            let pipeWidth = 50;
+            let pipeSpeed = 2;
+
+            p.setup = function() {
+                p.createCanvas(400, 500);
+                birdY = p.height / 2;
+                pipes.push(createPipe());
+            };
+
+            p.draw = function() {
+                p.background(0, 191, 255);
+
+                if (!gameOver) {
+                    // Update bird
+                    birdVelocity += gravity;
+                    birdY += birdVelocity;
+
+                    // Draw bird
+                    p.fill(255, 255, 0);
+                    p.ellipse(birdX, birdY, birdSize);
+
+                    // Update pipes
+                    for (let i = pipes.length - 1; i >= 0; i--) {
+                        let pipe = pipes[i];
+                        pipe.x -= pipeSpeed;
+
+                        // Draw pipes
+                        p.fill(0, 255, 0);
+                        p.rect(pipe.x, 0, pipeWidth, pipe.top);
+                        p.rect(pipe.x, pipe.bottom, pipeWidth, p.height - pipe.bottom);
+
+                        // Check collision
+                        if (birdX + birdSize / 2 > pipe.x && birdX - birdSize / 2 < pipe.x + pipeWidth) {
+                            if (birdY - birdSize / 2 < pipe.top || birdY + birdSize / 2 > pipe.bottom) {
+                                gameOver = true;
+                            }
+                        }
+
+                        // Score when passing pipe
+                        if (birdX > pipe.x + pipeWidth && !pipe.scored) {
+                            score++;
+                            pipe.scored = true;
+                        }
+
+                        // Remove off-screen pipes
+                        if (pipe.x < -pipeWidth) {
+                            pipes.splice(i, 1);
+                        }
+                    }
+
+                    // Spawn new pipe
+                    if (p.frameCount % 100 === 0) {
+                        pipes.push(createPipe());
+                    }
+
+                    // Game over if bird hits ground or ceiling
+                    if (birdY > p.height || birdY < 0) {
+                        gameOver = true;
+                    }
+
+                    // Display score
+                    p.fill(0);
+                    p.textSize(20);
+                    p.text(`Score: ${score}`, 10, 30);
+                } else {
+                    p.fill(0);
+                    p.textSize(32);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(`Game Over\nScore: ${score}`, p.width / 2, p.height / 2);
+                    p.textSize(20);
+                    p.text('Click to return to menu', p.width / 2, p.height / 2 + 50);
+                }
+            };
+
+            function createPipe() {
+                let gapY = p.random(100, p.height - 100 - pipeGap);
+                return {
+                    x: p.width,
+                    top: gapY,
+                    bottom: gapY + pipeGap,
+                    scored: false
+                };
+            }
+
+            p.mousePressed = function() {
+                if (!gameOver) {
+                    birdVelocity = jump;
+                } else {
+                    showMenu();
+                }
+            };
+
+            p.keyPressed = function() {
+                if (p.key === ' ' && !gameOver) {
+                    birdVelocity = jump;
+                }
+            };
+        };
+    </script>
 </body>
 </html>
